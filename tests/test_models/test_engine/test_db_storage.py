@@ -4,6 +4,7 @@ Contains the TestDBStorageDocs and TestDBStorage classes
 """
 
 from datetime import datetime
+from models import storage
 import inspect
 import models
 from models.engine import db_storage
@@ -14,7 +15,6 @@ from models.place import Place
 from models.review import Review
 from models.state import State
 from models.user import User
-from models import storage
 import json
 import os
 import pep8
@@ -69,35 +69,6 @@ test_db_storage.py'])
                             "{:s} method needs a docstring".format(func[0]))
 
 
-@unittest.skipIf(type(models.storage) == FileStorage, "Testing FileStorage")
-class TestStateDBInstances(unittest.TestCase):
-    """DBStorage State Tests"""
-    def tearDownClass():
-        """tidies up the tests removing storage objects"""
-        storage.drop_table(State)
-
-    def setUp(self):
-        """initializes new BaseModel object for testing"""
-        self.state_one = State(name='OK')
-        self.state_one.save()
-        self.state_one_id = self.state_one.id
-        self.state_two = State(name='AR')
-        self.state_two.save()
-        self.state_two_id = self.state_two.id
-        storage.save()
-        storage.reload()
-
-    def test_count_meth(self):
-        """tests count method for DBStorage"""
-        total_states = storage.count(State)
-        self.assertEqual(total_states, 2)
-
-    def test_get_meth(self):
-        """tests get method for DBStorage"""
-        oklahoma_get = storage.get(State, self.state_one_id)
-        self.assertEqual(oklahoma_get.name, 'OK')
-
-
 class TestFileStorage(unittest.TestCase):
     """Test the FileStorage class"""
     @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
@@ -115,4 +86,25 @@ class TestFileStorage(unittest.TestCase):
 
     @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
     def test_save(self):
-        """Test that save properly saves objects to file.json"""
+        """test that save properly saves objects to file.json"""
+
+    def test_get_db(self):
+        """tests method for obtaining a db storage instance"""
+        dic = {"name": "Cundinamarca"}
+        instance = State(**dic)
+        storage.new(instance)
+        storage.save()
+        get_instance = storage.get(State, instance.id)
+        self.assertEqual(get_instance, instance)
+
+    def test_count(self):
+        """ Tests count method db storage """
+        dic = {"name": "Vecindad"}
+        state = State(**dic)
+        storage.new(state)
+        dic = {"name": "Mexico", "state_id": state.id}
+        city = City(**dic)
+        storage.new(city)
+        storage.save()
+        c = storage.count()
+        self.assertEqual(len(storage.all()), c)
